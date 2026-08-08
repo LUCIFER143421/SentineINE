@@ -133,7 +133,7 @@ def analyze(pil_image=None, situation_text=""):
             contents=contents,
             config=types.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=4096,
+                max_output_tokens=get_max_output_tokens(),
             )
         )
         report_text = response.text
@@ -146,13 +146,19 @@ def analyze(pil_image=None, situation_text=""):
         }
     except Exception as e:
         error_msg = str(e)
-        if "api_key" in error_msg.lower() or "invalid" in error_msg.lower():
+        error_lower = error_msg.lower()
+        if "api_key" in error_lower or "invalid" in error_lower:
             friendly = "Invalid API Key - check your .env file!"
-        elif "quota" in error_msg.lower() or "limit" in error_msg.lower():
-            friendly = "Rate limit hit - wait 60 seconds!"
-        elif "blocked" in error_msg.lower() or "safety" in error_msg.lower():
+        elif (
+            "429" in error_msg
+            or "resource_exhausted" in error_lower
+            or "quota" in error_lower
+            or "rate limit" in error_lower
+        ):
+            friendly = build_quota_error(error_msg)
+        elif "blocked" in error_lower or "safety" in error_lower:
             friendly = "Safety filter triggered - rephrase situation report!"
-        elif "404" in error_msg or "not found" in error_msg.lower():
+        elif "404" in error_msg or "not found" in error_lower:
             friendly = "Model not found - check MODEL_ID"
         else:
             friendly = f"Error: {error_msg}"

@@ -58,6 +58,9 @@ cp .env.example .env
 
 # Open .env and paste your key
 GEMINI_API_KEY=paste_your_key_here
+
+# Optional: use another Gemini model if your key has quota there
+GEMINI_MODEL_ID=gemini-2.0-flash
 ```
 
 ### Step 5 — Run!
@@ -66,6 +69,22 @@ streamlit run app.py
 ```
 
 Opens automatically at **http://localhost:8501** ✅
+
+---
+
+## 🔧 Troubleshooting Rate Limits
+
+If the app says the Gemini API quota/rate limit was reached on the first
+image, it usually means the API key or Google Cloud project has no available
+quota for the configured model, not that the image upload itself failed.
+
+Try these fixes:
+
+1. Open Google AI Studio and check the active quota for your API key/project.
+2. Wait for the retry delay shown in the error details, then submit once.
+3. Use a model that has available quota for your account by setting
+   `GEMINI_MODEL_ID` in `.env`.
+4. Keep image files small; the app already resizes images before sending them.
 
 ---
 
