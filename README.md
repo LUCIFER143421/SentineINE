@@ -27,7 +27,7 @@ briefs — in seconds.
 |---|---|
 | Python 3.10+ | Core language |
 | Streamlit | Web UI |
-| Gemini 1.5 Flash | AI analysis engine |
+| Gemini 2.0 Flash | AI analysis engine |
 | Pillow | Image processing |
 | python-dotenv | API key management |
 
@@ -58,6 +58,13 @@ cp .env.example .env
 
 # Open .env and paste your key
 GEMINI_API_KEY=paste_your_key_here
+
+# Recommended for this app: strong multimodal analysis with better throughput than Pro
+GEMINI_MODEL_ID=gemini-2.5-flash
+
+# Optional: reduce token/image usage if you still hit quota
+GEMINI_MAX_OUTPUT_TOKENS=2048
+MAX_IMAGE_DIMENSION=768
 ```
 
 ### Step 5 — Run!
@@ -69,10 +76,52 @@ Opens automatically at **http://localhost:8501** ✅
 
 ---
 
+## 🔧 Troubleshooting Rate Limits
+
+If the app says the Gemini API quota/rate limit was reached on the first
+image, it usually means the API key or Google Cloud project has no available
+quota for the configured model, not that the image upload itself failed.
+
+Try these fixes:
+
+1. Open Google AI Studio and check the active quota for your API key/project.
+2. Wait for the retry delay shown in the error details, then submit once.
+3. Use a model that has available quota for your account by setting
+   `GEMINI_MODEL_ID` in `.env`.
+4. Keep image files small; the app already resizes images before sending them.
+
+Recommended model choices:
+
+| Model | Use when | `.env` value |
+|---|---|---|
+| Gemini 2.5 Flash | Best default for image + text analysis with good quality and throughput | `GEMINI_MODEL_ID=gemini-2.5-flash` |
+| Gemini 2.5 Flash-Lite | Use this first if you still hit quota; fastest/cheapest for frequent tests | `GEMINI_MODEL_ID=gemini-2.5-flash-lite` |
+| Gemini 2.5 Pro | Use only for final/high-quality analysis; it can have stricter quota and higher cost | `GEMINI_MODEL_ID=gemini-2.5-pro` |
+
+Note: a Gemini app subscription such as Gemini Advanced/Pro is not the same
+thing as Gemini API quota. The API key/project quota is managed separately in
+Google AI Studio / Google Cloud.
+
+To verify the actual issue before opening the Streamlit app, run:
+
+```bash
+python diagnose_gemini.py
+```
+
+If this tiny text-only probe returns a `429` / `RESOURCE_EXHAUSTED` error, the
+problem is your Gemini API key/project quota or selected model access, not the
+uploaded image. To see which models your key can access, run:
+
+```bash
+python diagnose_gemini.py --list-models
+```
+
+---
+
 ## 🧪 Testing
 
 Sample satellite/terrain images are included in the
-`sample_images/` folder — use them to test instantly!
+`sample_image/` folder — use them to test instantly!
 
 ---
 
@@ -82,16 +131,17 @@ Sample satellite/terrain images are included in the
 SentinelNE/
 ├── app.py                 ← Main Streamlit application
 ├── gemini_analyzer.py     ← Gemini API integration
+├── diagnose_gemini.py     ← Gemini API quota/model diagnostic helper
 ├── image_processor.py     ← Image optimization
 ├── report_formatter.py    ← Report formatting utilities
 ├── requirements.txt       ← Dependencies
 ├── .env.example           ← API key template
 ├── .gitignore
 ├── README.md
-└── sample_images/         ← Test images for judges
-    ├── terrain_1.jpg
-    ├── terrain_2.jpg
-    └── terrain_3.jpg
+└── sample_image/          ← Test images for judges
+    ├── Screenshot 2026-08-08 103958.png
+    ├── Screenshot 2026-08-08 104042.png
+    └── ...
 ```
 
 ---
