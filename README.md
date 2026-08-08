@@ -27,7 +27,7 @@ briefs — in seconds.
 |---|---|
 | Python 3.10+ | Core language |
 | Streamlit | Web UI |
-| Gemini 1.5 Flash | AI analysis engine |
+| Gemini 2.0 Flash | AI analysis engine |
 | Pillow | Image processing |
 | python-dotenv | API key management |
 
@@ -72,7 +72,7 @@ Opens automatically at **http://localhost:8501** ✅
 ## 🧪 Testing
 
 Sample satellite/terrain images are included in the
-`sample_images/` folder — use them to test instantly!
+`sample_image/` folder — use them to test instantly!
 
 ---
 
@@ -88,10 +88,10 @@ SentinelNE/
 ├── .env.example           ← API key template
 ├── .gitignore
 ├── README.md
-└── sample_images/         ← Test images for judges
-    ├── terrain_1.jpg
-    ├── terrain_2.jpg
-    └── terrain_3.jpg
+└── sample_image/          ← Test images for judges
+    ├── Screenshot 2026-08-08 103958.png
+    ├── Screenshot 2026-08-08 104042.png
+    └── ...
 ```
 
 ---

@@ -8,17 +8,21 @@ from PIL import Image
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in .env file!")
-
-client = genai.Client(api_key=API_KEY)
 MODEL_ID = "gemini-2.0-flash"
+
+
+def get_client():
+    if not API_KEY:
+        raise ValueError("GEMINI_API_KEY not found in .env file!")
+    return genai.Client(api_key=API_KEY)
+
 
 def pil_to_bytes(pil_image):
     buffer = io.BytesIO()
     pil_image.save(buffer, format="JPEG", quality=85)
     buffer.seek(0)
     return buffer.read()
+
 
 def build_prompt(situation_text=""):
     base = """
@@ -80,19 +84,29 @@ Report by SentinelNE AI System
 """
     return base
 
+
 def extract_risk_level(text):
     text_upper = text.upper()
     if "OVERALL RISK LEVEL:" in text_upper:
         section = text_upper.split("OVERALL RISK LEVEL:")[1][:60]
-        if "CRITICAL" in section: return "CRITICAL"
-        if "HIGH"     in section: return "HIGH"
-        if "MEDIUM"   in section: return "MEDIUM"
-        if "LOW"      in section: return "LOW"
-    if "CRITICAL" in text_upper: return "CRITICAL"
-    if "HIGH"     in text_upper: return "HIGH"
-    if "MEDIUM"   in text_upper: return "MEDIUM"
-    if "LOW"      in text_upper: return "LOW"
+        if "CRITICAL" in section:
+            return "CRITICAL"
+        if "HIGH" in section:
+            return "HIGH"
+        if "MEDIUM" in section:
+            return "MEDIUM"
+        if "LOW" in section:
+            return "LOW"
+    if "CRITICAL" in text_upper:
+        return "CRITICAL"
+    if "HIGH" in text_upper:
+        return "HIGH"
+    if "MEDIUM" in text_upper:
+        return "MEDIUM"
+    if "LOW" in text_upper:
+        return "LOW"
     return "UNKNOWN"
+
 
 def analyze(pil_image=None, situation_text=""):
     if pil_image is None and not situation_text.strip():
@@ -113,6 +127,7 @@ def analyze(pil_image=None, situation_text=""):
             )
             contents.append(image_part)
         contents.append(prompt)
+        client = get_client()
         response = client.models.generate_content(
             model=MODEL_ID,
             contents=contents,
