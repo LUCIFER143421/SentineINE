@@ -90,7 +90,7 @@ with st.sidebar:
     st.markdown("""
     - Use satellite/aerial images
     - Add situation context for deeper analysis
-    - Sample images in `sample_images/` folder
+    - Sample images in `sample_image/` folder
     - Works with Google Maps screenshots!
     """)
 
@@ -146,7 +146,7 @@ with col1:
             st.image(
                 pil_image,
                 caption=f"📍 {uploaded_file.name}",
-                use_column_width=True
+                use_container_width=True
             )
             st.success(
                 f"✅ Image loaded: {original_size[0]}×{original_size[1]}px"
@@ -166,7 +166,7 @@ with col1:
             <div style="font-size: 2.5em">🛰️</div>
             <div style="margin-top: 10px;">No image uploaded yet</div>
             <div style="font-size: 0.8em; margin-top: 5px; color: #6e7681;">
-                Use sample images from sample_images/ folder
+                Use sample images from sample_image/ folder
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -212,7 +212,7 @@ with col1:
     )
 
     st.caption(
-        "📁 Sample satellite images in `sample_images/` folder for testing"
+        "📁 Sample satellite images in `sample_image/` folder for testing"
     )
 
 # ═══════════════════════════════════════════════════
