@@ -8,17 +8,53 @@ from PIL import Image
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in .env file!")
+MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-2.0-flash")
 
-client = genai.Client(api_key=API_KEY)
-MODEL_ID = "gemini-2.0-flash"
+
+def get_max_output_tokens():
+    try:
+        return int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "2048"))
+    except ValueError:
+        return 2048
+
+
+def get_client():
+    if not API_KEY:
+        raise ValueError("GEMINI_API_KEY not found in .env file!")
+    return genai.Client(api_key=API_KEY)
+
+
+def get_retry_delay_seconds(error_text):
+    for marker in ("retry_delay {", "retryDelay"):
+        if marker in error_text:
+            digits = "".join(ch for ch in error_text.split(marker, 1)[1][:20] if ch.isdigit())
+            if digits:
+                return int(digits)
+    return None
+
+
+def build_quota_error(error_text):
+    retry_delay = get_retry_delay_seconds(error_text)
+    wait_hint = (
+        f" Gemini asked to retry after about {retry_delay} seconds."
+        if retry_delay
+        else " Wait a minute, then try once."
+    )
+    return (
+        "Gemini API quota/rate limit reached for this API key or project."
+        f"{wait_hint} If this happens on the first image, check the API key's "
+        "active quota in Google AI Studio, confirm the selected model is "
+        "available for your plan, or set GEMINI_MODEL_ID to a model with "
+        f"available free quota. Details: {error_text}"
+    )
+
 
 def pil_to_bytes(pil_image):
     buffer = io.BytesIO()
     pil_image.save(buffer, format="JPEG", quality=85)
     buffer.seek(0)
     return buffer.read()
+
 
 def build_prompt(situation_text=""):
     base = """
@@ -80,19 +116,29 @@ Report by SentinelNE AI System
 """
     return base
 
+
 def extract_risk_level(text):
     text_upper = text.upper()
     if "OVERALL RISK LEVEL:" in text_upper:
         section = text_upper.split("OVERALL RISK LEVEL:")[1][:60]
-        if "CRITICAL" in section: return "CRITICAL"
-        if "HIGH"     in section: return "HIGH"
-        if "MEDIUM"   in section: return "MEDIUM"
-        if "LOW"      in section: return "LOW"
-    if "CRITICAL" in text_upper: return "CRITICAL"
-    if "HIGH"     in text_upper: return "HIGH"
-    if "MEDIUM"   in text_upper: return "MEDIUM"
-    if "LOW"      in text_upper: return "LOW"
+        if "CRITICAL" in section:
+            return "CRITICAL"
+        if "HIGH" in section:
+            return "HIGH"
+        if "MEDIUM" in section:
+            return "MEDIUM"
+        if "LOW" in section:
+            return "LOW"
+    if "CRITICAL" in text_upper:
+        return "CRITICAL"
+    if "HIGH" in text_upper:
+        return "HIGH"
+    if "MEDIUM" in text_upper:
+        return "MEDIUM"
+    if "LOW" in text_upper:
+        return "LOW"
     return "UNKNOWN"
+
 
 def analyze(pil_image=None, situation_text=""):
     if pil_image is None and not situation_text.strip():
@@ -113,12 +159,13 @@ def analyze(pil_image=None, situation_text=""):
             )
             contents.append(image_part)
         contents.append(prompt)
+        client = get_client()
         response = client.models.generate_content(
             model=MODEL_ID,
             contents=contents,
             config=types.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=4096,
+                max_output_tokens=get_max_output_tokens(),
             )
         )
         report_text = response.text
@@ -131,13 +178,19 @@ def analyze(pil_image=None, situation_text=""):
         }
     except Exception as e:
         error_msg = str(e)
-        if "api_key" in error_msg.lower() or "invalid" in error_msg.lower():
+        error_lower = error_msg.lower()
+        if "api_key" in error_lower or "invalid" in error_lower:
             friendly = "Invalid API Key - check your .env file!"
-        elif "quota" in error_msg.lower() or "limit" in error_msg.lower():
-            friendly = "Rate limit hit - wait 60 seconds!"
-        elif "blocked" in error_msg.lower() or "safety" in error_msg.lower():
+        elif (
+            "429" in error_msg
+            or "resource_exhausted" in error_lower
+            or "quota" in error_lower
+            or "rate limit" in error_lower
+        ):
+            friendly = build_quota_error(error_msg)
+        elif "blocked" in error_lower or "safety" in error_lower:
             friendly = "Safety filter triggered - rephrase situation report!"
-        elif "404" in error_msg or "not found" in error_msg.lower():
+        elif "404" in error_msg or "not found" in error_lower:
             friendly = "Model not found - check MODEL_ID"
         else:
             friendly = f"Error: {error_msg}"
