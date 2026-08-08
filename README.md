@@ -59,12 +59,8 @@ cp .env.example .env
 # Open .env and paste your key
 GEMINI_API_KEY=paste_your_key_here
 
-# Recommended for this app: strong multimodal analysis with better throughput than Pro
-GEMINI_MODEL_ID=gemini-2.5-flash
-
-# Optional: reduce token/image usage if you still hit quota
-GEMINI_MAX_OUTPUT_TOKENS=2048
-MAX_IMAGE_DIMENSION=768
+# Optional: use another Gemini model if your key has quota there
+GEMINI_MODEL_ID=gemini-2.0-flash
 ```
 
 ### Step 5 — Run!
@@ -89,18 +85,6 @@ Try these fixes:
 3. Use a model that has available quota for your account by setting
    `GEMINI_MODEL_ID` in `.env`.
 4. Keep image files small; the app already resizes images before sending them.
-
-Recommended model choices:
-
-| Model | Use when | `.env` value |
-|---|---|---|
-| Gemini 2.5 Flash | Best default for image + text analysis with good quality and throughput | `GEMINI_MODEL_ID=gemini-2.5-flash` |
-| Gemini 2.5 Flash-Lite | Use this first if you still hit quota; fastest/cheapest for frequent tests | `GEMINI_MODEL_ID=gemini-2.5-flash-lite` |
-| Gemini 2.5 Pro | Use only for final/high-quality analysis; it can have stricter quota and higher cost | `GEMINI_MODEL_ID=gemini-2.5-pro` |
-
-Note: a Gemini app subscription such as Gemini Advanced/Pro is not the same
-thing as Gemini API quota. The API key/project quota is managed separately in
-Google AI Studio / Google Cloud.
 
 ---
 

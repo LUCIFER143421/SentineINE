@@ -8,45 +8,13 @@ from PIL import Image
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
-
-
-def get_max_output_tokens():
-    try:
-        return int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "2048"))
-    except ValueError:
-        return 2048
+MODEL_ID = "gemini-2.0-flash"
 
 
 def get_client():
     if not API_KEY:
         raise ValueError("GEMINI_API_KEY not found in .env file!")
     return genai.Client(api_key=API_KEY)
-
-
-def get_retry_delay_seconds(error_text):
-    for marker in ("retry_delay {", "retryDelay"):
-        if marker in error_text:
-            digits = "".join(ch for ch in error_text.split(marker, 1)[1][:20] if ch.isdigit())
-            if digits:
-                return int(digits)
-    return None
-
-
-def build_quota_error(error_text):
-    retry_delay = get_retry_delay_seconds(error_text)
-    wait_hint = (
-        f" Gemini asked to retry after about {retry_delay} seconds."
-        if retry_delay
-        else " Wait a minute, then try once."
-    )
-    return (
-        "Gemini API quota/rate limit reached for this API key or project."
-        f"{wait_hint} If this happens on the first image, check the API key's "
-        "active quota in Google AI Studio, confirm the selected model is "
-        "available for your plan, or set GEMINI_MODEL_ID to a model with "
-        f"available free quota. Details: {error_text}"
-    )
 
 
 def pil_to_bytes(pil_image):
